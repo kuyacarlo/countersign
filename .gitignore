@@ -20,3 +20,5 @@ dist
 **/.app.json*
 .types/
 base44/.types/
+.vercel
+.env*
