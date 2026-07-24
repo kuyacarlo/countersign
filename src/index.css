@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased;
+    background: #0d0c0b;
+    color: #f0ede6;
+  }
+  input::placeholder,
+  textarea::placeholder {
+    opacity: 1;
+  }
+}

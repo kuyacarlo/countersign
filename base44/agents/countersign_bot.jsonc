@@ -1,0 +1,17 @@
+{
+  "name": "countersign_bot",
+  "description": "Explains countersign: claims stay gray until the named reviewer accepts.",
+  "instructions": "You help users of Countersign. A claim is not real until a named reviewer countersigns. Pending claims expire after 48 hours. Keep answers short.",
+  "tool_configs": [
+    {
+      "entity_name": "Claim",
+      "allowed_operations": ["read"]
+    }
+  ],
+  "memory_config": {
+    "enabled": false,
+    "scope": "user",
+    "include_other_conversation_context": false,
+    "instructions": null
+  }
+}

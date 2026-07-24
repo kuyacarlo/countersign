@@ -1,0 +1,33 @@
+{
+  "name": "Claim",
+  "type": "object",
+  "properties": {
+    "body": {
+      "type": "string",
+      "description": "What is being claimed"
+    },
+    "claimer_email": {
+      "type": "string",
+      "description": "Who posted the claim"
+    },
+    "reviewer_email": {
+      "type": "string",
+      "description": "Named person who must countersign"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "signed", "rejected", "expired"],
+      "default": "pending",
+      "description": "pending until countersign; signed/rejected/expired terminal"
+    },
+    "note": {
+      "type": "string",
+      "description": "Optional reject note or context"
+    },
+    "expires_at": {
+      "type": "string",
+      "description": "ISO timestamp when pending claims auto-expire"
+    }
+  },
+  "required": ["body", "claimer_email", "reviewer_email", "status", "expires_at"]
+}
