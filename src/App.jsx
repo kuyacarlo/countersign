@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { base44, goGoogleLogin } from "@/api/base44Client";
+import { base44, goGoogleLogin, goAuthHost, isExternalHost, APP_HOST } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Check, RefreshCw, X } from "lucide-react";
@@ -90,6 +90,14 @@ export default function App() {
     return claims.filter((c) => c.status === filter);
   }, [claims, filter, email]);
 
+  const authFail = (err) => {
+    const msg = String(err?.message || err?.data?.message || err);
+    if (/domain is not valid/i.test(msg)) {
+      return `Base44 rejected this host for auth. Use ${APP_HOST} (Vercel/custom domains need a Builder plan).`;
+    }
+    return msg;
+  };
+
   const loginPassword = async (e) => {
     e.preventDefault();
     setAuthBusy(true);
@@ -102,7 +110,7 @@ export default function App() {
       );
       await load();
     } catch (err) {
-      setError(String(err?.message || err));
+      setError(authFail(err));
     } finally {
       setAuthBusy(false);
     }
@@ -121,7 +129,7 @@ export default function App() {
       setAuthMode("otp");
       setAuthHint("Check your email for a 6-digit code.");
     } catch (err) {
-      setError(String(err?.message || err));
+      setError(authFail(err));
     } finally {
       setAuthBusy(false);
     }
@@ -145,7 +153,7 @@ export default function App() {
       setAuthOtp("");
       await load();
     } catch (err) {
-      setError(String(err?.message || err));
+      setError(authFail(err));
     } finally {
       setAuthBusy(false);
     }
@@ -158,7 +166,7 @@ export default function App() {
       await base44.auth.resendOtp(authEmail.trim());
       setAuthHint("New code sent — check your inbox.");
     } catch (err) {
-      setError(String(err?.message || err));
+      setError(authFail(err));
     } finally {
       setAuthBusy(false);
     }
@@ -210,6 +218,23 @@ export default function App() {
           A claim is gray until a named person countersigns. Reject or expire —
           it stays fake.
         </p>
+        {isExternalHost() && (
+          <div className="w-full max-w-xs space-y-2 rounded-lg border border-[#3a3732] bg-[#141312] p-3 text-center text-xs text-[#888480]">
+            <p>
+              You&apos;re on an external host. Base44 auth is reliable on{" "}
+              <span className="text-[#c4a882]">*.base44.app</span> (custom
+              domains need Builder).
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={goAuthHost}
+            >
+              Open Base44 host
+            </Button>
+          </div>
+        )}
         {authMode !== "otp" && (
           <div className="flex w-full max-w-xs gap-2">
             <button

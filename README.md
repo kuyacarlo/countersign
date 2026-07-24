@@ -4,8 +4,8 @@ Competition spike for Base44 Dev Build-Off (Jul 21–28 2026).
 
 **Pitch:** A claim stays gray until a named person countersigns. Reject or expire — it stays fake.
 
-**Live (Vercel):** https://countersign-five.vercel.app  
-**Base44 host:** https://countersign-c93a8b96.base44.app  
+**Auth / demo:** https://countersign-c93a8b96.base44.app  
+**Mirror (Vercel):** https://countersign-five.vercel.app — Google/signup can fail here; Base44 only trusts `*.base44.app` (and paid custom domains).  
 **GitHub:** https://github.com/kuyacarlo/countersign  
 **Dashboard:** https://app.base44.com/apps/6a62f603c1dbaee5c93a8b96/editor/workspace/overview
 
