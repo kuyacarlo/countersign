@@ -26,7 +26,10 @@ export default function App() {
   const [reviewer, setReviewer] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [authOtp, setAuthOtp] = useState("");
+  const [authMode, setAuthMode] = useState("signin"); // signin | signup | otp
   const [authBusy, setAuthBusy] = useState(false);
+  const [authHint, setAuthHint] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
@@ -91,12 +94,69 @@ export default function App() {
     e.preventDefault();
     setAuthBusy(true);
     setError("");
+    setAuthHint("");
     try {
       await base44.auth.loginViaEmailPassword(
         authEmail.trim(),
         authPassword,
       );
       await load();
+    } catch (err) {
+      setError(String(err?.message || err));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const createAccount = async (e) => {
+    e.preventDefault();
+    setAuthBusy(true);
+    setError("");
+    setAuthHint("");
+    try {
+      await base44.auth.register({
+        email: authEmail.trim(),
+        password: authPassword,
+      });
+      setAuthMode("otp");
+      setAuthHint("Check your email for a 6-digit code.");
+    } catch (err) {
+      setError(String(err?.message || err));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const verifyOtp = async (e) => {
+    e.preventDefault();
+    setAuthBusy(true);
+    setError("");
+    setAuthHint("");
+    try {
+      await base44.auth.verifyOtp({
+        email: authEmail.trim(),
+        otpCode: authOtp.trim(),
+      });
+      await base44.auth.loginViaEmailPassword(
+        authEmail.trim(),
+        authPassword,
+      );
+      setAuthMode("signin");
+      setAuthOtp("");
+      await load();
+    } catch (err) {
+      setError(String(err?.message || err));
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const resendOtp = async () => {
+    setAuthBusy(true);
+    setError("");
+    try {
+      await base44.auth.resendOtp(authEmail.trim());
+      setAuthHint("New code sent — check your inbox.");
     } catch (err) {
       setError(String(err?.message || err));
     } finally {
@@ -150,36 +210,137 @@ export default function App() {
           A claim is gray until a named person countersigns. Reject or expire —
           it stays fake.
         </p>
-        <form onSubmit={loginPassword} className="w-full max-w-xs space-y-2">
-          <Input
-            type="email"
-            required
-            autoComplete="email"
-            placeholder="email"
-            value={authEmail}
-            onChange={(e) => setAuthEmail(e.target.value)}
-          />
-          <Input
-            type="password"
-            required
-            autoComplete="current-password"
-            placeholder="password"
-            value={authPassword}
-            onChange={(e) => setAuthPassword(e.target.value)}
-          />
-          <Button type="submit" disabled={authBusy} className="w-full">
-            {authBusy ? "Signing in…" : "Sign in with email"}
+        {authMode !== "otp" && (
+          <div className="flex w-full max-w-xs gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode("signin");
+                setError("");
+                setAuthHint("");
+              }}
+              className={`flex-1 rounded-md border px-2 py-1.5 font-mono text-[0.72rem] ${
+                authMode === "signin"
+                  ? "border-[#c4a882] text-[#c4a882]"
+                  : "border-[#252320] text-[#888480]"
+              }`}
+            >
+              sign in
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode("signup");
+                setError("");
+                setAuthHint("");
+              }}
+              className={`flex-1 rounded-md border px-2 py-1.5 font-mono text-[0.72rem] ${
+                authMode === "signup"
+                  ? "border-[#c4a882] text-[#c4a882]"
+                  : "border-[#252320] text-[#888480]"
+              }`}
+            >
+              create account
+            </button>
+          </div>
+        )}
+
+        {authMode === "otp" ? (
+          <form onSubmit={verifyOtp} className="w-full max-w-xs space-y-2">
+            <p className="text-center text-xs text-[#888480]">
+              Code sent to <span className="text-[#c4a882]">{authEmail}</span>
+            </p>
+            <Input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              required
+              placeholder="6-digit code"
+              value={authOtp}
+              onChange={(e) => setAuthOtp(e.target.value)}
+            />
+            <Button type="submit" disabled={authBusy} className="w-full">
+              {authBusy ? "Verifying…" : "Verify & sign in"}
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={authBusy}
+                onClick={resendOtp}
+                className="flex-1"
+              >
+                Resend code
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={authBusy}
+                onClick={() => {
+                  setAuthMode("signup");
+                  setAuthOtp("");
+                  setError("");
+                  setAuthHint("");
+                }}
+                className="flex-1"
+              >
+                Back
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <form
+            onSubmit={authMode === "signup" ? createAccount : loginPassword}
+            className="w-full max-w-xs space-y-2"
+          >
+            <Input
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="email"
+              value={authEmail}
+              onChange={(e) => setAuthEmail(e.target.value)}
+            />
+            <Input
+              type="password"
+              required
+              autoComplete={
+                authMode === "signup" ? "new-password" : "current-password"
+              }
+              placeholder="password"
+              value={authPassword}
+              onChange={(e) => setAuthPassword(e.target.value)}
+            />
+            <Button type="submit" disabled={authBusy} className="w-full">
+              {authBusy
+                ? authMode === "signup"
+                  ? "Creating…"
+                  : "Signing in…"
+                : authMode === "signup"
+                  ? "Create account"
+                  : "Sign in with email"}
+            </Button>
+          </form>
+        )}
+
+        {authMode !== "otp" && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={goGoogleLogin}
+            className="w-full max-w-xs"
+          >
+            Continue with Google
           </Button>
-        </form>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={goGoogleLogin}
-          className="w-full max-w-xs"
-        >
-          Continue with Google
-        </Button>
-        {error && <p className="text-sm text-red-300">{error}</p>}
+        )}
+        {authHint && (
+          <p className="max-w-xs text-center text-sm text-[#c4a882]">
+            {authHint}
+          </p>
+        )}
+        {error && (
+          <p className="max-w-xs text-center text-sm text-red-300">{error}</p>
+        )}
       </div>
     );
   }
